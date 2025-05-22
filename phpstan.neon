@@ -1,0 +1,89 @@
+parameters:
+    level: 5
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+    excludePaths:
+        - vendor/*
+        - storage/*
+        - bootstrap/cache/*
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # Type hints
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics
+        # Testing
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::shouldReceive\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::with\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::andReturn\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::times\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::getAttribute\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::create\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::fake\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::put\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::assertStatus\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::assertJsonStructure\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::assertJson\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::assertJsonValidationErrors\(\)#'
+        # Laravel specific
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::firstOrFail\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::findOrFail\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::where\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::orderBy\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::paginate\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::get\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::create\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::update\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::delete\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder::latest\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::latest\(\)#'
+        - '#Call to an undefined static method Illuminate\\Database\\Eloquent\\Model::latest\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::latest\(\)#'
+        # Video model static methods
+        - '#Call to an undefined static method App\\Models\\Video::orderBy\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::where\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::find\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::findOrFail\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::create\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::update\(\)#'
+        - '#Call to an undefined static method App\\Models\\Video::delete\(\)#'
+        # Request properties
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$path#'
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$input#'
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$query#'
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$route#'
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$file#'
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$files#'
+        # Video model properties
+        - '#Access to an undefined property App\\Models\\Video::\$file_name#'
+        - '#Access to an undefined property App\\Models\\Video::\$file_path#'
+        - '#Access to an undefined property App\\Models\\Video::\$hash#'
+        - '#Access to an undefined property App\\Models\\Video::\$file_size#'
+        - '#Access to an undefined property App\\Models\\Video::\$content_type#'
+        - '#Access to an undefined property App\\Models\\Video::\$status#'
+        - '#Access to an undefined property App\\Models\\Video::\$language#'
+        - '#Access to an undefined property App\\Models\\Video::\$subtitle_path#'
+        - '#Access to an undefined property App\\Models\\Video::\$season#'
+        - '#Access to an undefined property App\\Models\\Video::\$episode#'
+        # Console routes
+        - message: '#Undefined variable: \$this#'
+          path: routes/console.php
+        # Facades
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Storage::fake\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Storage::put\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Storage::exists\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Storage::delete\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Log::info\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Log::error\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Log::warning\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Log::debug\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Cache::remember\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Cache::forget\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Cache::get\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Cache::put\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Cache::has\(\)#'
+        - '#Call to an undefined method Illuminate\\Support\\Facades\\Cache::flush\(\)#'

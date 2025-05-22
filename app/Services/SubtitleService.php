@@ -1,20 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Video;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 class SubtitleService
 {
     protected $apiKey;
+
     protected $baseUrl = 'https://api.opensubtitles.com/api/v1';
+
     protected $userAgent = 'SubtitleFinder v1.0';
+
     protected $token;
 
     public function __construct()
@@ -28,53 +32,53 @@ class SubtitleService
         // Intentar obtener el token del cache
         $token = Cache::get('opensubtitles_token');
 
-        if (!$token) {
-            Log::info("Iniciando autenticación con OpenSubtitles");
+        if (! $token) {
+            Log::info('Iniciando autenticación con OpenSubtitles');
 
             $loginData = [
                 'username' => config('services.opensubtitles.username'),
-                'password' => config('services.opensubtitles.password')
+                'password' => config('services.opensubtitles.password'),
             ];
 
             $headers = [
                 'Api-Key' => $this->apiKey,
                 'Content-Type' => 'application/json',
-                'User-Agent' => $this->userAgent
+                'User-Agent' => $this->userAgent,
             ];
 
-            Log::info("Datos de autenticación:", [
+            Log::info('Datos de autenticación:', [
                 'username' => $loginData['username'],
                 'api_key' => $this->apiKey,
-                'headers' => $headers
+                'headers' => $headers,
             ]);
 
             try {
                 $response = Http::withHeaders($headers)
                     ->timeout(30)
-                    ->post($this->baseUrl . '/login', $loginData);
+                    ->post($this->baseUrl.'/login', $loginData);
 
-                Log::info("Respuesta de autenticación:", [
+                Log::info('Respuesta de autenticación:', [
                     'status' => $response->status(),
                     'headers' => $response->headers(),
-                    'body' => $response->json()
+                    'body' => $response->json(),
                 ]);
 
                 if ($response->successful()) {
                     $responseData = $response->json();
 
-                    if (!isset($responseData['token'])) {
-                        Log::error("La respuesta no contiene el token", [
-                            'response' => $responseData
+                    if (! isset($responseData['token'])) {
+                        Log::error('La respuesta no contiene el token', [
+                            'response' => $responseData,
                         ]);
-                        throw new \Exception("La respuesta de OpenSubtitles no contiene el token");
+                        throw new \Exception('La respuesta de OpenSubtitles no contiene el token');
                     }
 
                     $token = $responseData['token'];
                     // Guardar el token en cache por 24 horas
                     Cache::put('opensubtitles_token', $token, now()->addHours(24));
 
-                    Log::info("Autenticación exitosa con OpenSubtitles", [
-                        'token' => substr($token, 0, 10) . '...' // Solo mostramos parte del token por seguridad
+                    Log::info('Autenticación exitosa con OpenSubtitles', [
+                        'token' => substr($token, 0, 10).'...', // Solo mostramos parte del token por seguridad
                     ]);
                 } else {
                     $errorDetails = [
@@ -82,27 +86,27 @@ class SubtitleService
                         'body' => $response->body(),
                         'headers' => $response->headers(),
                         'request_data' => $loginData,
-                        'request_headers' => $headers
+                        'request_headers' => $headers,
                     ];
 
-                    Log::error("Error en la autenticación con OpenSubtitles", $errorDetails);
+                    Log::error('Error en la autenticación con OpenSubtitles', $errorDetails);
 
                     // Mensaje de error más descriptivo
-                    $errorMessage = "Error de autenticación con OpenSubtitles: ";
+                    $errorMessage = 'Error de autenticación con OpenSubtitles: ';
                     if ($response->status() === 401) {
-                        $errorMessage .= "Credenciales inválidas";
+                        $errorMessage .= 'Credenciales inválidas';
                     } elseif ($response->status() === 429) {
-                        $errorMessage .= "Límite de peticiones excedido";
+                        $errorMessage .= 'Límite de peticiones excedido';
                     } else {
-                        $errorMessage .= "Código de estado: " . $response->status();
+                        $errorMessage .= 'Código de estado: '.$response->status();
                     }
 
                     throw new \Exception($errorMessage);
                 }
             } catch (\Exception $e) {
-                Log::error("Excepción durante la autenticación con OpenSubtitles", [
+                Log::error('Excepción durante la autenticación con OpenSubtitles', [
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'trace' => $e->getTraceAsString(),
                 ]);
                 throw $e;
             }
@@ -128,10 +132,10 @@ class SubtitleService
             exec($command, $output, $returnVar);
 
             // Log del resultado completo de FFmpeg
-            Log::info("Resultado de FFmpeg:", [
+            Log::info('Resultado de FFmpeg:', [
                 'return_code' => $returnVar,
                 'output' => $output,
-                'command' => $command
+                'command' => $command,
             ]);
 
             // Procesar la salida para extraer el idioma
@@ -149,12 +153,12 @@ class SubtitleService
 
                     $detectedLanguages[] = [
                         'track' => $trackIndex,
-                        'language' => $trackLanguage
+                        'language' => $trackLanguage,
                     ];
                 }
             }
 
-            $languageDetected = !empty($detectedLanguages);
+            $languageDetected = ! empty($detectedLanguages);
             $language = $languageDetected ? $detectedLanguages[0]['language'] : null;
 
             // Normalizar el código de idioma si existe
@@ -162,10 +166,10 @@ class SubtitleService
                 $language = substr($language, 0, 2);
             }
 
-            $message = "Idioma detectado: " . ($language ?? 'No detectado');
+            $message = 'Idioma detectado: '.($language ?? 'No detectado');
             Log::info($message, [
                 'detected_languages' => $detectedLanguages,
-                'raw_output' => $output
+                'raw_output' => $output,
             ]);
 
             return [
@@ -173,17 +177,17 @@ class SubtitleService
                 'detected' => $languageDetected,
                 'ffmpeg_output' => $output,
                 'ffmpeg_return_code' => $returnVar,
-                'all_languages' => $detectedLanguages
+                'all_languages' => $detectedLanguages,
             ];
 
         } catch (\Exception $e) {
             $errorDetails = [
                 'error' => $e->getMessage(),
                 'file' => $filePath,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ];
 
-            $message = "Error al detectar el idioma";
+            $message = 'Error al detectar el idioma';
             Log::error($message, $errorDetails);
 
             return [
@@ -191,7 +195,7 @@ class SubtitleService
                 'detected' => false,
                 'ffmpeg_output' => [],
                 'ffmpeg_return_code' => -1,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }
@@ -205,25 +209,27 @@ class SubtitleService
         $tvPatterns = [
             '/S(\d{1,2})E(\d{1,2})/i',           // S01E02
             '/(\d{1,2})x(\d{1,2})/i',            // 1x02
-            '/Season\.(\d{1,2})\.Episode\.(\d{1,2})/i'  // Season.1.Episode.2
+            '/Season\.(\d{1,2})\.Episode\.(\d{1,2})/i',  // Season.1.Episode.2
         ];
 
         foreach ($tvPatterns as $pattern) {
             if (preg_match($pattern, $fileName, $matches)) {
-                $message = "Contenido detectado como serie de TV";
+                $message = 'Contenido detectado como serie de TV';
                 Log::info($message);
+
                 return [
                     'type' => 'tvshow',
-                    'season' => (int)$matches[1],
-                    'episode' => (int)$matches[2]
+                    'season' => (int) $matches[1],
+                    'episode' => (int) $matches[2],
                 ];
             }
         }
 
-        $message = "Contenido detectado como película";
+        $message = 'Contenido detectado como película';
         Log::info($message);
+
         return [
-            'type' => 'movie'
+            'type' => 'movie',
         ];
     }
 
@@ -237,6 +243,7 @@ class SubtitleService
                 Log::info("Subtítulo existente encontrado para: {$video->file_name}");
                 $video->status = 'completed';
                 $video->save();
+
                 return true;
             }
 
@@ -244,7 +251,7 @@ class SubtitleService
                 'query' => $video->file_name,
                 'languages' => 'spa',
                 'moviehash' => $video->hash,
-                'moviebytesize' => $video->file_size
+                'moviebytesize' => $video->file_size,
             ];
 
             if ($video->content_type === 'tv_show') {
@@ -254,42 +261,43 @@ class SubtitleService
 
             $headers = [
                 'Api-Key' => $this->apiKey,
-                'Authorization' => 'Bearer ' . $this->token,
+                'Authorization' => 'Bearer '.$this->token,
                 'Content-Type' => 'application/json',
-                'User-Agent' => $this->userAgent
+                'User-Agent' => $this->userAgent,
             ];
 
-            Log::info("Parámetros de búsqueda:", $searchParams);
-            Log::info("Headers de la petición:", $headers);
+            Log::info('Parámetros de búsqueda:', $searchParams);
+            Log::info('Headers de la petición:', $headers);
 
-            $response = Http::withHeaders($headers)->get($this->baseUrl . '/subtitles', $searchParams);
+            $response = Http::withHeaders($headers)->get($this->baseUrl.'/subtitles', $searchParams);
 
-            Log::info("Respuesta de la API - Status: " . $response->status());
-            Log::info("Respuesta de la API - Headers:", $response->headers());
-            Log::info("Respuesta de la API - Body:", $response->json());
+            Log::info('Respuesta de la API - Status: '.$response->status());
+            Log::info('Respuesta de la API - Headers:', $response->headers());
+            Log::info('Respuesta de la API - Body:', $response->json());
 
             if ($response->successful()) {
                 $data = $response->json();
 
-                if (!empty($data['data'])) {
+                if (! empty($data['data'])) {
                     Log::info("Subtítulo encontrado para: {$video->file_name}");
                     $subtitle = $data['data'][0];
+
                     return $this->downloadSubtitle($subtitle['attributes']['files'][0]['file_id'], $video);
                 } else {
                     Log::warning("No se encontraron subtítulos para: {$video->file_name}");
                 }
             } else {
-                Log::error("Error en la respuesta de la API", [
+                Log::error('Error en la respuesta de la API', [
                     'status' => $response->status(),
-                    'body' => $response->body()
+                    'body' => $response->body(),
                 ]);
             }
 
             return false;
         } catch (\Exception $e) {
-            Log::error("Error al buscar subtítulos para {$video->file_name}: " . $e->getMessage(), [
+            Log::error("Error al buscar subtítulos para {$video->file_name}: ".$e->getMessage(), [
                 'exception' => $e,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
         }
@@ -303,31 +311,32 @@ class SubtitleService
 
         // Patrones comunes de nombres de subtítulos
         $patterns = [
-            $videoName . '.srt',
-            $videoName . '.sub',
-            $videoName . '.ssa',
-            $videoName . '.ass',
-            $videoName . '.vtt',
+            $videoName.'.srt',
+            $videoName.'.sub',
+            $videoName.'.ssa',
+            $videoName.'.ass',
+            $videoName.'.vtt',
             // Patrones con idioma
-            $videoName . '.es.srt',
-            $videoName . '.spa.srt',
-            $videoName . '.spanish.srt',
+            $videoName.'.es.srt',
+            $videoName.'.spa.srt',
+            $videoName.'.spanish.srt',
             // Patrones con calidad
-            $videoName . '.720p.srt',
-            $videoName . '.1080p.srt',
-            $videoName . '.WEBRip.srt',
-            $videoName . '.BluRay.srt',
+            $videoName.'.720p.srt',
+            $videoName.'.1080p.srt',
+            $videoName.'.WEBRip.srt',
+            $videoName.'.BluRay.srt',
             // Patrones combinados
-            $videoName . '.720p.es.srt',
-            $videoName . '.1080p.spa.srt',
-            $videoName . '.WEBRip.spanish.srt'
+            $videoName.'.720p.es.srt',
+            $videoName.'.1080p.spa.srt',
+            $videoName.'.WEBRip.spanish.srt',
         ];
 
         foreach ($patterns as $pattern) {
-            $subtitlePath = $videoDir . DIRECTORY_SEPARATOR . $pattern;
+            $subtitlePath = $videoDir.DIRECTORY_SEPARATOR.$pattern;
             if (file_exists($subtitlePath)) {
                 $video->subtitle_path = $subtitlePath;
                 $video->language = 'es';
+
                 return true;
             }
         }
@@ -342,19 +351,19 @@ class SubtitleService
         $requestParams = [
             'file_id' => $fileId,
             'sub_format' => 'srt',
-            'force_download' => 1
+            'force_download' => 1,
         ];
 
         $headers = [
             'Api-Key' => $this->apiKey,
-            'Authorization' => 'Bearer ' . $this->token,
+            'Authorization' => 'Bearer '.$this->token,
             'Content-Type' => 'application/json',
             'User-Agent' => $this->userAgent,
-            'Accept' => 'application/json'
+            'Accept' => 'application/json',
         ];
 
-        Log::info("Parámetros de descarga:", $requestParams);
-        Log::info("Headers de descarga:", $headers);
+        Log::info('Parámetros de descarga:', $requestParams);
+        Log::info('Headers de descarga:', $headers);
 
         // Intentar la descarga hasta 3 veces con espera entre intentos
         $maxAttempts = 3;
@@ -363,60 +372,62 @@ class SubtitleService
         while ($attempt <= $maxAttempts) {
             Log::info("Intento de descarga {$attempt} de {$maxAttempts}");
 
-            $response = Http::withHeaders($headers)->post($this->baseUrl . '/download', $requestParams);
+            $response = Http::withHeaders($headers)->post($this->baseUrl.'/download', $requestParams);
 
-            Log::info("Respuesta de descarga - Status: " . $response->status());
-            Log::info("Respuesta de descarga - Headers:", $response->headers());
-            Log::info("Respuesta de descarga - Body:", $response->json());
+            Log::info('Respuesta de descarga - Status: '.$response->status());
+            Log::info('Respuesta de descarga - Headers:', $response->headers());
+            Log::info('Respuesta de descarga - Body:', $response->json());
 
             if ($response->successful()) {
                 $responseData = $response->json();
 
-                if (!isset($responseData['link'])) {
-                    Log::error("La respuesta no contiene el enlace de descarga del subtítulo", [
-                        'response' => $responseData
+                if (! isset($responseData['link'])) {
+                    Log::error('La respuesta no contiene el enlace de descarga del subtítulo', [
+                        'response' => $responseData,
                     ]);
+
                     return false;
                 }
 
                 // Realizar la descarga del archivo desde el enlace
-                Log::info("Descargando archivo desde: " . $responseData['link']);
+                Log::info('Descargando archivo desde: '.$responseData['link']);
 
                 $downloadResponse = Http::withHeaders([
                     'User-Agent' => $this->userAgent,
-                    'Accept' => '*/*'
+                    'Accept' => '*/*',
                 ])->get($responseData['link']);
 
-                Log::info("Respuesta de descarga del archivo - Status: " . $downloadResponse->status());
-                Log::info("Respuesta de descarga del archivo - Headers:", $downloadResponse->headers());
+                Log::info('Respuesta de descarga del archivo - Status: '.$downloadResponse->status());
+                Log::info('Respuesta de descarga del archivo - Headers:', $downloadResponse->headers());
 
-                if (!$downloadResponse->successful()) {
-                    Log::error("Error al descargar el archivo de subtítulo", [
+                if (! $downloadResponse->successful()) {
+                    Log::error('Error al descargar el archivo de subtítulo', [
                         'status' => $downloadResponse->status(),
-                        'headers' => $downloadResponse->headers()
+                        'headers' => $downloadResponse->headers(),
                     ]);
+
                     return false;
                 }
 
                 $subtitleContent = $downloadResponse->body();
-                Log::info("Contenido del subtítulo descargado - Tamaño: " . strlen($subtitleContent) . " bytes");
+                Log::info('Contenido del subtítulo descargado - Tamaño: '.strlen($subtitleContent).' bytes');
 
                 // Obtener la ruta del directorio del video
                 $videoDir = dirname($video->file_path);
 
                 // Crear el nombre del archivo de subtítulo
-                $subtitleFileName = pathinfo($video->file_name, PATHINFO_FILENAME) . '.srt';
+                $subtitleFileName = pathinfo($video->file_name, PATHINFO_FILENAME).'.srt';
 
                 // Ruta completa del subtítulo
-                $subtitlePath = $videoDir . DIRECTORY_SEPARATOR . $subtitleFileName;
+                $subtitlePath = $videoDir.DIRECTORY_SEPARATOR.$subtitleFileName;
 
                 Log::info("Guardando subtítulo en: {$subtitlePath}");
 
                 // Guardar el subtítulo en la misma carpeta que el video
                 if (file_put_contents($subtitlePath, $subtitleContent)) {
-                    Log::info("Subtítulo guardado exitosamente");
-                    Log::info("Verificando archivo guardado - Existe: " . (file_exists($subtitlePath) ? 'Sí' : 'No'));
-                    Log::info("Verificando archivo guardado - Tamaño: " . filesize($subtitlePath) . " bytes");
+                    Log::info('Subtítulo guardado exitosamente');
+                    Log::info('Verificando archivo guardado - Existe: '.(file_exists($subtitlePath) ? 'Sí' : 'No'));
+                    Log::info('Verificando archivo guardado - Tamaño: '.filesize($subtitlePath).' bytes');
 
                     // Actualizar el modelo con la ruta relativa del subtítulo
                     $video->subtitle_path = $subtitlePath;
@@ -424,20 +435,22 @@ class SubtitleService
                     $video->save();
 
                     Log::info("Estado del video actualizado a 'completed'");
+
                     return true;
                 } else {
-                    Log::error("Error al guardar el subtítulo", [
+                    Log::error('Error al guardar el subtítulo', [
                         'path' => $subtitlePath,
                         'permissions' => decoct(fileperms($videoDir) & 0777),
                         'disk_free_space' => disk_free_space($videoDir),
-                        'is_writable' => is_writable($videoDir)
+                        'is_writable' => is_writable($videoDir),
                     ]);
+
                     return false;
                 }
             } else {
-                Log::error("Error en la respuesta de descarga", [
+                Log::error('Error en la respuesta de descarga', [
                     'status' => $response->status(),
-                    'body' => $response->body()
+                    'body' => $response->body(),
                 ]);
 
                 // Si es un error 406 o rate limit, esperar y reintentar
@@ -445,18 +458,21 @@ class SubtitleService
                     (isset($response->headers()['Ratelimit-Remaining']) && $response->headers()['Ratelimit-Remaining'][0] == 0)) {
 
                     $waitTime = isset($response->headers()['Ratelimit-Reset']) ?
-                        (int)$response->headers()['Ratelimit-Reset'][0] + 1 : 2;
+                        (int) $response->headers()['Ratelimit-Reset'][0] + 1 : 2;
 
                     Log::warning("Rate limit alcanzado o error 406. Esperando {$waitTime} segundos antes de reintentar...");
                     sleep($waitTime);
                     $attempt++;
+
                     continue;
                 }
+
                 return false;
             }
         }
 
-        Log::error("Se agotaron los intentos de descarga");
+        Log::error('Se agotaron los intentos de descarga');
+
         return false;
     }
 
@@ -490,7 +506,7 @@ class SubtitleService
 
                 // Verificar si el video tiene español en alguna pista
                 $hasSpanish = false;
-                if (!empty($languageInfo['all_languages'])) {
+                if (! empty($languageInfo['all_languages'])) {
                     foreach ($languageInfo['all_languages'] as $lang) {
                         if ($lang['language'] === 'spa' || $lang['language'] === 'es') {
                             $hasSpanish = true;
@@ -502,6 +518,7 @@ class SubtitleService
                 if ($hasSpanish) {
                     Log::info("Video ignorado por tener audio en español: {$fileName}");
                     $videosSkippedSpanish++;
+
                     continue;
                 }
 
@@ -513,10 +530,10 @@ class SubtitleService
                     'season' => $contentInfo['season'] ?? null,
                     'episode' => $contentInfo['episode'] ?? null,
                     'status' => $status,
-                    'subtitle_path' => $subtitlePath
+                    'subtitle_path' => $subtitlePath,
                 ];
 
-                Log::info("Creando registro de video:", $videoData);
+                Log::info('Creando registro de video:', $videoData);
 
                 Video::create($videoData);
                 $videosAdded++;
@@ -527,18 +544,18 @@ class SubtitleService
             }
         }
 
-        Log::info("Escaneo completado", [
+        Log::info('Escaneo completado', [
             'videos_encontrados' => $videosFound,
             'videos_agregados' => $videosAdded,
             'videos_con_subtitulos' => $videosWithSubtitles,
-            'videos_ignorados_por_espanol' => $videosSkippedSpanish
+            'videos_ignorados_por_espanol' => $videosSkippedSpanish,
         ]);
 
         return [
             'found' => $videosFound,
             'added' => $videosAdded,
             'with_subtitles' => $videosWithSubtitles,
-            'skipped_spanish' => $videosSkippedSpanish
+            'skipped_spanish' => $videosSkippedSpanish,
         ];
     }
 
@@ -550,30 +567,31 @@ class SubtitleService
 
         // Patrones comunes de nombres de subtítulos
         $patterns = [
-            $videoName . '.srt',
-            $videoName . '.sub',
-            $videoName . '.ssa',
-            $videoName . '.ass',
-            $videoName . '.vtt',
+            $videoName.'.srt',
+            $videoName.'.sub',
+            $videoName.'.ssa',
+            $videoName.'.ass',
+            $videoName.'.vtt',
             // Patrones con idioma
-            $videoName . '.es.srt',
-            $videoName . '.spa.srt',
-            $videoName . '.spanish.srt',
+            $videoName.'.es.srt',
+            $videoName.'.spa.srt',
+            $videoName.'.spanish.srt',
             // Patrones con calidad
-            $videoName . '.720p.srt',
-            $videoName . '.1080p.srt',
-            $videoName . '.WEBRip.srt',
-            $videoName . '.BluRay.srt',
+            $videoName.'.720p.srt',
+            $videoName.'.1080p.srt',
+            $videoName.'.WEBRip.srt',
+            $videoName.'.BluRay.srt',
             // Patrones combinados
-            $videoName . '.720p.es.srt',
-            $videoName . '.1080p.spa.srt',
-            $videoName . '.WEBRip.spanish.srt'
+            $videoName.'.720p.es.srt',
+            $videoName.'.1080p.spa.srt',
+            $videoName.'.WEBRip.spanish.srt',
         ];
 
         foreach ($patterns as $pattern) {
-            $subtitlePath = $videoDir . DIRECTORY_SEPARATOR . $pattern;
+            $subtitlePath = $videoDir.DIRECTORY_SEPARATOR.$pattern;
             if (file_exists($subtitlePath)) {
                 Log::info("Subtítulo existente encontrado: {$subtitlePath}");
+
                 return $subtitlePath;
             }
         }

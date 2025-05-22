@@ -1,14 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Video;
 use App\Services\SubtitleService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 class VideoController extends Controller
 {
@@ -22,13 +21,14 @@ class VideoController extends Controller
     public function index()
     {
         $videos = Video::latest()->paginate(50);
+
         return view('videos.index', compact('videos'));
     }
 
     public function scan(Request $request)
     {
         $request->validate([
-            'path' => 'required|string'
+            'path' => 'required|string',
         ]);
 
         try {
@@ -37,12 +37,12 @@ class VideoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Escaneo completado. Se encontraron {$result['found']} videos, de los cuales {$result['added']} necesitan subtítulos.",
-                'data' => $result
+                'data' => $result,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => "Error al escanear el directorio: " . $e->getMessage()
+                'message' => 'Error al escanear el directorio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -59,29 +59,32 @@ class VideoController extends Controller
 
             if ($result) {
                 Log::info("Procesamiento completado exitosamente para: {$video->file_name}");
+
                 return response()->json([
                     'success' => true,
                     'message' => "Subtítulo descargado exitosamente para {$video->file_name}",
-                    'video' => $video->fresh()
+                    'video' => $video->fresh(),
                 ]);
             } else {
                 $video->status = 'failed';
                 $video->save();
                 Log::error("Error al procesar el video: {$video->file_name}");
+
                 return response()->json([
                     'success' => false,
                     'message' => "No se pudo encontrar un subtítulo para {$video->file_name}",
-                    'video' => $video->fresh()
+                    'video' => $video->fresh(),
                 ]);
             }
         } catch (\Exception $e) {
             $video->status = 'failed';
             $video->save();
-            Log::error("Error al procesar el video {$video->file_name}: " . $e->getMessage());
+            Log::error("Error al procesar el video {$video->file_name}: ".$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => "Error al procesar {$video->file_name}: " . $e->getMessage(),
-                'video' => $video->fresh()
+                'message' => "Error al procesar {$video->file_name}: ".$e->getMessage(),
+                'video' => $video->fresh(),
             ], 500);
         }
     }
@@ -93,7 +96,7 @@ class VideoController extends Controller
 
         // Validar la columna de ordenamiento
         $allowedColumns = ['file_name', 'language', 'status', 'created_at'];
-        if (!in_array($sortColumn, $allowedColumns)) {
+        if (! in_array($sortColumn, $allowedColumns)) {
             $sortColumn = 'file_name';
         }
 
@@ -104,7 +107,7 @@ class VideoController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $videos
+            'data' => $videos,
         ]);
     }
 }

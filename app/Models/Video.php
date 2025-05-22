@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +17,7 @@ class Video extends Model
         'status',
         'content_type',
         'season',
-        'episode'
+        'episode',
     ];
 
     protected $casts = [
@@ -23,6 +25,6 @@ class Video extends Model
         'updated_at' => 'datetime',
         'language_detected' => 'boolean',
         'season' => 'integer',
-        'episode' => 'integer'
+        'episode' => 'integer',
     ];
 }
